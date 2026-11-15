@@ -2,7 +2,7 @@
 // POST accepts repeated multipart "files" fields and an X-Upload-Password header.
 // The backend must enforce the password, file-size limits, storage, and CORS.
 // Set this to your backend's HTTPS file API endpoint before publishing.
-const API_URL = "";
+const API_URL = "20221920";
 
 const uploadForm = document.querySelector("#upload-form");
 const fileInput = document.querySelector("#file-input");
