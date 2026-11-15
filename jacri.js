@@ -2,7 +2,7 @@
 // POST accepts repeated multipart "files" fields and an X-Upload-Password header.
 // The backend must enforce the password, file-size limits, storage, and CORS.
 // Set this to your backend's HTTPS file API endpoint before publishing.
-const API_URL = "@@20221920221920@@";
+const API_URL = "";
 
 const uploadForm = document.querySelector("#upload-form");
 const fileInput = document.querySelector("#file-input");
@@ -27,8 +27,14 @@ function getApiUrl() {
         throw new Error("Set API_URL in jacri.js to your backend's file API endpoint.");
     }
 
-    const url = new URL(API_URL, window.location.href);
-    if (url.protocol !== "https:" && url.hostname !== "localhost") {
+    let url;
+    try {
+        url = new URL(API_URL);
+    } catch (error) {
+        throw new Error("API_URL must be the full HTTPS URL of your upload backend, not a relative path.");
+    }
+    const isLocalhost = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    if (url.protocol !== "https:" && !(url.protocol === "http:" && isLocalhost)) {
         throw new Error("The file API must use HTTPS.");
     }
     return url;
@@ -40,10 +46,18 @@ async function readResponse(response) {
         return {};
     }
 
+    const trimmedText = text.trimStart();
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("text/html") || /^<!doctype html|^<html/i.test(trimmedText)) {
+        return {
+            message: "The server returned a web page instead of the file API. Check that API_URL points to your deployed backend, not your GitHub Pages site."
+        };
+    }
+
     try {
         return JSON.parse(text);
     } catch (error) {
-        return { message: text };
+        return { message: text.slice(0, 300) };
     }
 }
 
