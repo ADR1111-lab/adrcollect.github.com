@@ -2,43 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#101827">
-    <title>Public file drop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111827">
+    <title>Private file library</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="jacri.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="javascript.js" defer></script>
 </head>
 <body>
     <main class="page">
         <header class="page-header">
-            <p class="eyebrow">FILE SHARING</p>
-            <h1>Public file drop</h1>
-            <p class="intro">Upload a file to share it. Uploaded files are public to anyone with this page.</p>
+            <p class="eyebrow">PRIVATE LIBRARY</p>
+            <h1>Your files, protected.</h1>
+            <p class="intro">Sign in to view the private photos and files shared with you.</p>
         </header>
 
-        <section class="panel" aria-labelledby="upload-heading">
-            <h2 id="upload-heading">Upload files</h2>
-            <form id="upload-form">
-                <label class="field-label" for="file-input">Choose one or more files</label>
-                <input id="file-input" name="files" type="file" multiple required>
+        <section id="login-panel" class="panel" aria-labelledby="login-heading">
+            <h2 id="login-heading">Sign in</h2>
+            <form id="login-form">
+                <label class="field-label" for="email-input">Email</label>
+                <input id="email-input" name="email" type="email" autocomplete="username" required>
 
-                <label class="field-label" for="upload-password">Upload password</label>
-                <input id="upload-password" name="password" type="password" autocomplete="current-password" required>
-                <p class="field-hint">The password is checked by your backend and is not saved by this page.</p>
+                <label class="field-label" for="password-input">Password</label>
+                <input id="password-input" name="password" type="password" autocomplete="current-password" required>
 
-                <button id="upload-button" type="submit">Upload files</button>
-                <p id="upload-status" class="status" role="status" aria-live="polite"></p>
+                <button id="login-button" type="submit">Unlock library</button>
+                <p id="login-status" class="status" role="status" aria-live="polite"></p>
             </form>
         </section>
 
-        <section class="file-section" aria-labelledby="files-heading">
+        <section id="library-panel" class="library" hidden aria-labelledby="files-heading">
             <div class="section-heading">
                 <div>
-                    <p class="eyebrow">SHARED FILES</p>
-                    <h2 id="files-heading">Available to everyone</h2>
+                    <p class="eyebrow">YOUR LIBRARY</p>
+                    <h2 id="files-heading">Photos and files</h2>
                 </div>
-                <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
+                <div class="actions">
+                    <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
+                    <button id="signout-button" class="secondary-button" type="button">Sign out</button>
+                </div>
             </div>
+
+            <section id="admin-panel" class="panel admin-panel" hidden aria-labelledby="upload-heading">
+                <h3 id="upload-heading">Admin: add files</h3>
+                <form id="upload-form">
+                    <label class="field-label" for="file-input">Choose photos or files</label>
+                    <input id="file-input" name="files" type="file" multiple required>
+                    <button id="upload-button" type="submit">Upload files</button>
+                    <p id="upload-status" class="status" role="status" aria-live="polite"></p>
+                </form>
+            </section>
+
             <p id="files-status" class="status" role="status" aria-live="polite"></p>
             <ul id="file-list" class="file-list"></ul>
         </section>
