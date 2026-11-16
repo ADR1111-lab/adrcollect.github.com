@@ -1,6 +1,6 @@
 // Set these values to match your public GitHub repository.
-const GITHUB_OWNER = "YOUR_GITHUB_USERNAME";
-const GITHUB_REPO = "YOUR_REPOSITORY_NAME";
+const GITHUB_OWNER = "ADR1111-lab";
+const GITHUB_REPO = "adrcollect.github.io";
 const GITHUB_BRANCH = "main";
 const GITHUB_FILES_PATH = "files";
 
