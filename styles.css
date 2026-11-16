@@ -49,7 +49,6 @@ input {
 
 h1,
 h2,
-h3,
 p {
     margin-top: 0;
 }
@@ -67,11 +66,6 @@ h2 {
     letter-spacing: -0.02em;
 }
 
-h3 {
-    margin-bottom: 12px;
-    font-size: 1.05rem;
-}
-
 .intro {
     max-width: 560px;
     margin-bottom: 0;
@@ -80,15 +74,12 @@ h3 {
 }
 
 .panel {
+    max-width: 520px;
     padding: 28px;
     border: 1px solid #29364b;
     border-radius: 16px;
     background: rgba(24, 35, 53, 0.92);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-}
-
-#login-panel {
-    max-width: 520px;
 }
 
 .field-label {
@@ -98,8 +89,6 @@ h3 {
     font-weight: 650;
 }
 
-input[type="file"],
-input[type="email"],
 input[type="password"] {
     width: 100%;
     min-height: 48px;
@@ -110,19 +99,8 @@ input[type="password"] {
     color: #edf2fb;
 }
 
-input[type="file"]::file-selector-button {
-    margin-right: 12px;
-    padding: 7px 10px;
-    border: 0;
-    border-radius: 6px;
-    background: #263752;
-    color: #edf2fb;
-    cursor: pointer;
-}
-
 input:focus-visible,
-button:focus-visible,
-a:focus-visible {
+button:focus-visible {
     outline: 3px solid #8db4ff;
     outline-offset: 3px;
 }
@@ -147,8 +125,7 @@ button:disabled {
     opacity: 0.65;
 }
 
-#login-button,
-#upload-button {
+#unlock-button {
     margin-top: 20px;
 }
 
@@ -182,27 +159,20 @@ button:disabled {
     margin-bottom: 0;
 }
 
-.actions,
-.file-actions {
+.actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
 }
 
-.secondary-button,
-.delete-button {
+.secondary-button {
     border: 1px solid #43516a;
     background: #1a2639;
     color: #edf2fb;
 }
 
-.secondary-button:hover,
-.delete-button:hover {
+.secondary-button:hover {
     background: #263752;
-}
-
-.admin-panel {
-    margin-top: 24px;
 }
 
 .file-list {
@@ -220,10 +190,6 @@ button:disabled {
     border: 1px solid #29364b;
     border-radius: 12px;
     background: rgba(24, 35, 53, 0.82);
-}
-
-.file-details {
-    min-width: 0;
 }
 
 .file-preview {
@@ -245,7 +211,7 @@ button:disabled {
     letter-spacing: 0.12em;
 }
 
-.file-text {
+.file-details {
     padding: 14px 14px 0;
 }
 
@@ -262,25 +228,8 @@ button:disabled {
     font-size: 0.82rem;
 }
 
-.file-actions {
-    align-items: center;
-    padding: 12px 14px 14px;
-}
-
-.file-link {
-    color: #a9c5ff;
-    font-weight: 650;
-    text-decoration: none;
-}
-
-.file-link:hover {
-    text-decoration: underline;
-}
-
-.delete-button {
-    min-height: 36px;
-    padding: 7px 11px;
-    font-size: 0.85rem;
+.download-button {
+    margin: 12px 14px 14px;
 }
 
 @media (max-width: 520px) {
@@ -295,9 +244,5 @@ button:disabled {
     .section-heading {
         align-items: flex-start;
         flex-direction: column;
-    }
-
-    .actions {
-        width: 100%;
     }
 }

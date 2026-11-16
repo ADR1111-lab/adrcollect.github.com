@@ -4,55 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#111827">
-    <title>Private file library</title>
+    <title>My file library</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="javascript.js" defer></script>
 </head>
 <body>
     <main class="page">
         <header class="page-header">
-            <p class="eyebrow">PRIVATE LIBRARY</p>
-            <h1>Your files, protected.</h1>
-            <p class="intro">Sign in to view the private photos and files shared with you.</p>
+            <p class="eyebrow">FILE LIBRARY</p>
+            <h1>Photos and files</h1>
+            <p class="intro">Enter the password to see and download files.</p>
         </header>
 
-        <section id="login-panel" class="panel" aria-labelledby="login-heading">
-            <h2 id="login-heading">Sign in</h2>
-            <form id="login-form">
-                <label class="field-label" for="email-input">Email</label>
-                <input id="email-input" name="email" type="email" autocomplete="username" required>
-
+        <section id="lock-panel" class="panel" aria-labelledby="lock-heading">
+            <h2 id="lock-heading">Password required</h2>
+            <form id="unlock-form">
                 <label class="field-label" for="password-input">Password</label>
                 <input id="password-input" name="password" type="password" autocomplete="current-password" required>
-
-                <button id="login-button" type="submit">Unlock library</button>
-                <p id="login-status" class="status" role="status" aria-live="polite"></p>
+                <button id="unlock-button" type="submit">Unlock files</button>
+                <p id="lock-status" class="status" role="status" aria-live="polite"></p>
             </form>
         </section>
 
         <section id="library-panel" class="library" hidden aria-labelledby="files-heading">
             <div class="section-heading">
                 <div>
-                    <p class="eyebrow">YOUR LIBRARY</p>
-                    <h2 id="files-heading">Photos and files</h2>
+                    <p class="eyebrow">AVAILABLE FILES</p>
+                    <h2 id="files-heading">Download a file</h2>
                 </div>
                 <div class="actions">
                     <button id="refresh-button" class="secondary-button" type="button">Refresh</button>
-                    <button id="signout-button" class="secondary-button" type="button">Sign out</button>
+                    <button id="lock-button" class="secondary-button" type="button">Lock</button>
                 </div>
             </div>
-
-            <section id="admin-panel" class="panel admin-panel" hidden aria-labelledby="upload-heading">
-                <h3 id="upload-heading">Admin: add files</h3>
-                <form id="upload-form">
-                    <label class="field-label" for="file-input">Choose photos or files</label>
-                    <input id="file-input" name="files" type="file" multiple required>
-                    <button id="upload-button" type="submit">Upload files</button>
-                    <p id="upload-status" class="status" role="status" aria-live="polite"></p>
-                </form>
-            </section>
-
             <p id="files-status" class="status" role="status" aria-live="polite"></p>
             <ul id="file-list" class="file-list"></ul>
         </section>

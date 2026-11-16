@@ -1,28 +1,23 @@
-// Use your Supabase project's URL and anon/public key here.
-// The anon key is intended for browser use; never put a service-role key here.
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
-const BUCKET = "private-vault";
+// Set these values to match your public GitHub repository.
+const GITHUB_OWNER = "YOUR_GITHUB_USERNAME";
+const GITHUB_REPO = "YOUR_REPOSITORY_NAME";
+const GITHUB_BRANCH = "main";
+const GITHUB_FILES_PATH = "files";
 
-const loginPanel = document.querySelector("#login-panel");
-const loginForm = document.querySelector("#login-form");
-const emailInput = document.querySelector("#email-input");
+// This password is visible in the published JavaScript. It only hides the page;
+// it does not prevent people from accessing files in a public GitHub repository.
+const VIEWER_PASSWORD = "CHANGE_THIS_PASSWORD";
+
+const unlockForm = document.querySelector("#unlock-form");
 const passwordInput = document.querySelector("#password-input");
-const loginButton = document.querySelector("#login-button");
-const loginStatus = document.querySelector("#login-status");
+const unlockButton = document.querySelector("#unlock-button");
+const lockStatus = document.querySelector("#lock-status");
+const lockPanel = document.querySelector("#lock-panel");
 const libraryPanel = document.querySelector("#library-panel");
-const adminPanel = document.querySelector("#admin-panel");
-const uploadForm = document.querySelector("#upload-form");
-const fileInput = document.querySelector("#file-input");
-const uploadButton = document.querySelector("#upload-button");
-const uploadStatus = document.querySelector("#upload-status");
 const filesStatus = document.querySelector("#files-status");
 const fileList = document.querySelector("#file-list");
 const refreshButton = document.querySelector("#refresh-button");
-const signoutButton = document.querySelector("#signout-button");
-
-let client;
-let currentRole = null;
+const lockButton = document.querySelector("#lock-button");
 
 function setStatus(element, message, state) {
     element.textContent = message;
@@ -33,73 +28,21 @@ function setStatus(element, message, state) {
     }
 }
 
-function showSignedOut(message, state) {
-    currentRole = null;
-    loginPanel.hidden = false;
-    libraryPanel.hidden = true;
-    adminPanel.hidden = true;
-    fileList.replaceChildren();
-    setStatus(loginStatus, message || "", state);
-}
-
-function showSignedIn(role) {
-    currentRole = role;
-    loginPanel.hidden = true;
-    libraryPanel.hidden = false;
-    adminPanel.hidden = role !== "admin";
-    setStatus(loginStatus, "");
-}
-
-function describeError(error) {
-    return error && error.message ? error.message : "Something went wrong. Please try again.";
-}
-
-function validateConfiguration() {
-    if (!window.supabase || !window.supabase.createClient) {
-        throw new Error("Could not load the Supabase client. Check your internet connection and try again.");
-    }
-    if (SUPABASE_URL === "YOUR_SUPABASE_URL" || SUPABASE_ANON_KEY === "YOUR_SUPABASE_ANON_KEY") {
-        throw new Error("Add your Supabase project URL and anon key in javascript.js before using the site.");
-    }
-    try {
-        const url = new URL(SUPABASE_URL);
-        if (url.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(url.hostname)) {
-            throw new Error();
-        }
-    } catch (error) {
-        throw new Error("SUPABASE_URL must be a valid HTTPS project URL.");
-    }
-}
-
-async function getRole(userId) {
-    const { data, error } = await client
-        .from("vault_users")
-        .select("role")
-        .eq("user_id", userId)
-        .maybeSingle();
-    if (error) {
-        throw error;
-    }
-    if (!data || !["admin", "viewer"].includes(data.role)) {
-        throw new Error("This account is not authorized to use the file library.");
-    }
-    return data.role;
-}
-
-async function signIn(email, password) {
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
-    if (error) {
-        throw error;
+function getFilesApiUrl() {
+    if (GITHUB_OWNER === "YOUR_GITHUB_USERNAME" || GITHUB_REPO === "YOUR_REPOSITORY_NAME") {
+        throw new Error("Set your GitHub username and repository name near the top of javascript.js.");
     }
 
-    try {
-        const role = await getRole(data.user.id);
-        showSignedIn(role);
-        await loadFiles();
-    } catch (error) {
-        await client.auth.signOut();
-        throw error;
-    }
+    const path = GITHUB_FILES_PATH
+        .split("/")
+        .filter(Boolean)
+        .map(encodeURIComponent)
+        .join("/");
+    const url = new URL(
+        `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/contents/${path}`
+    );
+    url.searchParams.set("ref", GITHUB_BRANCH);
+    return url;
 }
 
 function formatBytes(bytes) {
@@ -119,221 +62,153 @@ function formatBytes(bytes) {
     return `${size.toFixed(size < 10 ? 1 : 0)} ${units[unit]}`;
 }
 
-function createFileItem(file, url) {
-    const mimeType = file.metadata && file.metadata.mimetype;
+function isImage(name) {
+    return /\.(avif|gif|jpe?g|png|webp)$/i.test(name);
+}
+
+function createFileItem(file) {
+    if (typeof file.name !== "string" || typeof file.download_url !== "string") {
+        throw new Error("GitHub returned an invalid file entry.");
+    }
+    const downloadUrl = new URL(file.download_url);
+    if (downloadUrl.protocol !== "https:" || downloadUrl.hostname !== "raw.githubusercontent.com") {
+        throw new Error(`GitHub returned an unsafe download link for "${file.name}".`);
+    }
+
     const item = document.createElement("li");
     item.className = "file-item";
 
-    const details = document.createElement("div");
-    details.className = "file-details";
-    if (typeof mimeType === "string" && mimeType.startsWith("image/")) {
+    if (isImage(file.name)) {
         const image = document.createElement("img");
         image.className = "file-preview";
-        image.src = url;
+        image.src = downloadUrl.href;
         image.alt = file.name;
         image.loading = "lazy";
-        details.append(image);
+        item.append(image);
     } else {
-        const icon = document.createElement("span");
+        const icon = document.createElement("div");
         icon.className = "file-icon";
         icon.setAttribute("aria-hidden", "true");
         icon.textContent = "FILE";
-        details.append(icon);
+        item.append(icon);
     }
 
-    const text = document.createElement("div");
-    text.className = "file-text";
+    const details = document.createElement("div");
+    details.className = "file-details";
     const name = document.createElement("p");
     name.className = "file-name";
     name.textContent = file.name;
-    text.append(name);
+    details.append(name);
 
-    const metadata = [];
-    const size = formatBytes(Number(file.metadata && file.metadata.size));
+    const size = formatBytes(Number(file.size));
     if (size) {
-        metadata.push(size);
-    }
-    if (file.created_at) {
-        const date = new Date(file.created_at);
-        if (!Number.isNaN(date.getTime())) {
-            metadata.push(date.toLocaleDateString());
-        }
-    }
-    if (metadata.length) {
-        const meta = document.createElement("p");
-        meta.className = "file-meta";
-        meta.textContent = metadata.join(" · ");
-        text.append(meta);
-    }
-    details.append(text);
-
-    const actions = document.createElement("div");
-    actions.className = "file-actions";
-    const openLink = document.createElement("a");
-    openLink.className = "file-link";
-    openLink.href = url;
-    openLink.target = "_blank";
-    openLink.rel = "noopener noreferrer";
-    openLink.textContent = typeof mimeType === "string" && mimeType.startsWith("image/") ? "View" : "Open";
-    actions.append(openLink);
-
-    if (currentRole === "admin") {
-        const deleteButton = document.createElement("button");
-        deleteButton.className = "delete-button";
-        deleteButton.type = "button";
-        deleteButton.textContent = "Delete";
-        deleteButton.addEventListener("click", () => deleteFile(file.name, deleteButton));
-        actions.append(deleteButton);
+        const metadata = document.createElement("p");
+        metadata.className = "file-meta";
+        metadata.textContent = size;
+        details.append(metadata);
     }
 
-    item.append(details, actions);
+    const downloadButton = document.createElement("button");
+    downloadButton.className = "download-button";
+    downloadButton.type = "button";
+    downloadButton.textContent = "Download";
+    downloadButton.addEventListener("click", () => downloadFile(downloadUrl.href, file.name, downloadButton));
+
+    item.append(details, downloadButton);
     return item;
 }
 
 async function loadFiles() {
     refreshButton.disabled = true;
-    setStatus(filesStatus, "Loading files…");
     fileList.replaceChildren();
+    setStatus(filesStatus, "Loading files…");
 
     try {
-        const { data, error } = await client.storage.from(BUCKET).list("", {
-            limit: 100,
-            sortBy: { column: "created_at", order: "desc" }
+        const response = await fetch(getFilesApiUrl(), {
+            headers: { Accept: "application/vnd.github+json" }
         });
-        if (error) {
-            throw error;
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error("Could not find the public repository or files folder. Check the settings in javascript.js.");
+            }
+            throw new Error(`Could not load files from GitHub (HTTP ${response.status}).`);
         }
 
-        const files = (data || []).filter((file) => file.name && file.name !== ".emptyFolderPlaceholder");
-        const items = await Promise.all(files.map(async (file) => {
-            const { data: signedFile, error: signedUrlError } = await client
-                .storage.from(BUCKET)
-                .createSignedUrl(file.name, 60 * 10);
-            if (signedUrlError) {
-                throw new Error(`Could not prepare "${file.name}" for viewing: ${signedUrlError.message}`);
-            }
-            return createFileItem(file, signedFile.signedUrl);
-        }));
+        const result = await response.json();
+        if (!Array.isArray(result)) {
+            throw new Error("The GitHub files folder response was not a file list.");
+        }
 
+        const files = result
+            .filter((file) => file.type === "file" && file.name !== ".gitkeep")
+            .sort((a, b) => a.name.localeCompare(b.name));
+        const items = files.map(createFileItem);
         fileList.replaceChildren(...items);
-        setStatus(filesStatus, items.length ? `${items.length} file${items.length === 1 ? "" : "s"}` : "No files have been uploaded yet.");
+        setStatus(filesStatus, items.length ? `${items.length} file${items.length === 1 ? "" : "s"}` : "No files in the GitHub files folder yet.");
     } catch (error) {
-        setStatus(filesStatus, describeError(error), "error");
+        setStatus(filesStatus, error.message || "Could not load files.", "error");
     } finally {
         refreshButton.disabled = false;
     }
 }
 
-async function deleteFile(name, button) {
-    if (!window.confirm(`Delete "${name}" from the private library?`)) {
-        return;
-    }
+async function downloadFile(url, filename, button) {
     button.disabled = true;
+    setStatus(filesStatus, `Preparing ${filename}…`);
     try {
-        const { error } = await client.storage.from(BUCKET).remove([name]);
-        if (error) {
-            throw error;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Could not download "${filename}" (HTTP ${response.status}).`);
         }
-        setStatus(filesStatus, `"${name}" deleted.`, "success");
-        await loadFiles();
+        const blobUrl = URL.createObjectURL(await response.blob());
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        setStatus(filesStatus, `Download started: ${filename}`, "success");
     } catch (error) {
+        setStatus(filesStatus, error.message || `Could not download "${filename}".`, "error");
+    } finally {
         button.disabled = false;
-        setStatus(filesStatus, describeError(error), "error");
     }
 }
 
-loginForm.addEventListener("submit", async (event) => {
+unlockForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!loginForm.reportValidity()) {
+    if (!unlockForm.reportValidity()) {
         return;
     }
-    loginButton.disabled = true;
-    setStatus(loginStatus, "Checking access…");
-    try {
-        await signIn(emailInput.value.trim(), passwordInput.value);
-        passwordInput.value = "";
-    } catch (error) {
-        setStatus(loginStatus, describeError(error), "error");
-    } finally {
-        passwordInput.value = "";
-        loginButton.disabled = false;
-    }
-});
-
-uploadForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (currentRole !== "admin" || !uploadForm.reportValidity()) {
+    if (VIEWER_PASSWORD === "CHANGE_THIS_PASSWORD") {
+        setStatus(lockStatus, "Set VIEWER_PASSWORD in javascript.js before publishing.", "error");
         return;
     }
-    const files = Array.from(fileInput.files || []);
-    uploadButton.disabled = true;
-    setStatus(uploadStatus, `Uploading ${files.length} file${files.length === 1 ? "" : "s"}…`);
-
-    let uploaded = 0;
-    try {
-        for (const file of files) {
-            const safeName = file.name.replace(/[^\w.-]+/g, "_");
-            const path = `${crypto.randomUUID()}-${safeName}`;
-            const { error } = await client.storage.from(BUCKET).upload(path, file, {
-                cacheControl: "3600",
-                upsert: false
-            });
-            if (error) {
-                throw new Error(`Uploaded ${uploaded} of ${files.length} files. "${file.name}": ${error.message}`);
-            }
-            uploaded += 1;
-        }
-        fileInput.value = "";
-        setStatus(uploadStatus, `${uploaded} file${uploaded === 1 ? "" : "s"} uploaded.`, "success");
-        await loadFiles();
-    } catch (error) {
-        setStatus(uploadStatus, describeError(error), "error");
-        if (uploaded) {
-            await loadFiles();
-        }
-    } finally {
-        uploadButton.disabled = false;
+    if (passwordInput.value !== VIEWER_PASSWORD) {
+        setStatus(lockStatus, "Incorrect password.", "error");
+        passwordInput.value = "";
+        passwordInput.focus();
+        return;
     }
+
+    unlockButton.disabled = true;
+    setStatus(lockStatus, "");
+    passwordInput.value = "";
+    lockPanel.hidden = true;
+    libraryPanel.hidden = false;
+    await loadFiles();
+    unlockButton.disabled = false;
 });
 
 refreshButton.addEventListener("click", loadFiles);
 
-signoutButton.addEventListener("click", async () => {
-    signoutButton.disabled = true;
-    try {
-        const { error } = await client.auth.signOut();
-        if (error) {
-            throw error;
-        }
-        showSignedOut("You are signed out.");
-    } catch (error) {
-        setStatus(filesStatus, describeError(error), "error");
-    } finally {
-        signoutButton.disabled = false;
-    }
+lockButton.addEventListener("click", () => {
+    libraryPanel.hidden = true;
+    lockPanel.hidden = false;
+    passwordInput.value = "";
+    passwordInput.focus();
+    fileList.replaceChildren();
+    setStatus(filesStatus, "");
+    setStatus(lockStatus, "");
 });
-
-async function initialize() {
-    try {
-        validateConfiguration();
-        client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const { data, error } = await client.auth.getSession();
-        if (error) {
-            throw error;
-        }
-        if (data.session) {
-            try {
-                const role = await getRole(data.session.user.id);
-                showSignedIn(role);
-                await loadFiles();
-            } catch (error) {
-                await client.auth.signOut();
-                throw error;
-            }
-        }
-    } catch (error) {
-        showSignedOut(describeError(error), "error");
-    }
-}
-
-initialize();

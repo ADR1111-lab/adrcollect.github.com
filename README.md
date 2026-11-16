@@ -1,30 +1,27 @@
-# Private file library
+# Read-only GitHub file library
 
-This site is a static GitHub Pages front end. Supabase Auth controls sign-in,
-and files live in a private Supabase Storage bucket. Viewers can list and open
-files; admins can also upload and delete them. The repository does not contain
-the files, passwords, or a Supabase service-role key.
+The page reads files from a public GitHub repository folder and lets visitors
+preview supported photos and download files. There is no upload or admin page.
 
-## Set up Supabase
+## Configure it
 
-1. Create a Supabase project.
-2. In **Project Settings > API**, copy the **Project URL** and **anon/public key**.
-   Put them in `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `javascript.js`.
-   The anon key is designed for browser use. Never put a `service_role` key in
-   this site or in GitHub.
-3. Open **SQL Editor**, run `supabase-setup.sql`.
-4. In **Authentication > Users**, create one account for each admin or viewer.
-   Disable public sign-ups in **Authentication > Settings** so strangers cannot
-   create accounts.
-5. Copy each user's UUID and run the matching role statement at the bottom of
-   `supabase-setup.sql` in the SQL Editor. Assign `admin` only to trusted users;
-   everyone else should be `viewer`.
-6. Deploy the repository to GitHub Pages. Use HTTPS when opening the site.
+1. Add your files directly inside a folder named `files` in your repository.
+   The page reads files from this folder on the repository's `main` branch.
+2. Edit the settings at the top of `javascript.js`:
+   - `GITHUB_OWNER`: your GitHub username or organization.
+   - `GITHUB_REPO`: the repository name.
+   - `GITHUB_BRANCH`: the branch containing your site and files.
+   - `GITHUB_FILES_PATH`: the folder path containing the files.
+   - `VIEWER_PASSWORD`: the password visitors type on the page.
+3. Publish the site with GitHub Pages.
 
-Use the account email and password to sign in. Supabase enforces access on the
-server: a viewer cannot upload or delete files even if they modify the page.
-Signed viewing links expire after ten minutes. If an account is compromised,
-change its password or remove its row from `vault_users`.
+Add or remove files in the GitHub folder and use **Refresh** on the site to
+update the list. Image files such as JPG, PNG, GIF, AVIF, and WebP are previewed.
+Other file types show a download button. Keep files directly inside the folder,
+not in nested subfolders.
 
-The GitHub repository should contain only the site code. Upload private files
-through the admin section after setup; do not commit them to the repository.
+## Password limitation
+
+This is only a simple screen in front of the file list. The password is included
+in the public JavaScript, and files in a public repository can be accessed
+directly without using the page. Do not use this for private or sensitive files.
