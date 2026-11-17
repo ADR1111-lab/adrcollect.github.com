@@ -6,7 +6,7 @@ const GITHUB_FILES_PATH = "files";
 
 // This password is visible in the published JavaScript. It only hides the page;
 // it does not prevent people from accessing files in a public GitHub repository.
-const VIEWER_PASSWORD = "20221920221920";
+const VIEWER_PASSWORD = "Ellarey";
 
 const unlockForm = document.querySelector("#unlock-form");
 const passwordInput = document.querySelector("#password-input");
